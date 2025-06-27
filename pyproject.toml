@@ -1,0 +1,25 @@
+[project]
+name = "abbsolve"
+version = "0.0.1"
+description = "An abbreviation, initialism, and acronym resolver and inverter."
+authors = [
+    {name = "John Anthony Labarga",email = "anthony@anthonylabarga.us"}
+]
+license = {text = "MIT"}
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "gensim (>=4.3.3,<5.0.0)",
+    "pandas (>=2.3.0,<3.0.0)"
+]
+
+[tool.poetry]
+
+[tool.poetry.group.dev.dependencies]
+black = "^25.1.0"
+flake8 = "^7.3.0"
+pylint = "^3.3.7"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
