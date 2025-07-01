@@ -1,5 +1,7 @@
 # abbsolve
 
+[![codecov](https://codecov.io/gh/anthonylabarga/abbsolve/graph/badge.svg?token=2O2COINS7F)](https://codecov.io/gh/anthonylabarga/abbsolve)
+
 `abbsolve` is an abbreviation, initialism, and acronym resolver and
 inverter.
 
