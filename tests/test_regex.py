@@ -1,4 +1,5 @@
 import pytest
+
 from abbsolve.utils.regex import get_initialism_candidates
 
 test_cases = [
