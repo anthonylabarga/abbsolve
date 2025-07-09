@@ -34,8 +34,13 @@ and makes no use of large language models (LLMs).
 ### v0.1.0
 
 - [ ] CLI version for terminal use
-- [ ] word2vec-based expansion ranker
+- [ ] ability to search digital-native PDFs
 
 ### v0.2.0
+
+- [ ] word2vec-based expansion ranker
+- [ ] ability to search .docx and .pptx
+
+### v0.3.0
 
 - [ ] transformer-based expansion ranker
