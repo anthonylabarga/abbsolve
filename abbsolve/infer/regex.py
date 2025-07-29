@@ -3,6 +3,7 @@ A class for finding initialism inversion candidates using regex-based search acr
 """
 
 import os
+from concurrent.futures import ThreadPoolExecutor
 from typing import List, Set
 
 from abbsolve.documents.corpus import txt_generator
@@ -38,25 +39,33 @@ class RegexInitialismInverter:
         self.initialism = initialism.strip()
         self.directory = directory
 
-    def find_candidates(self, stopwords: List[str] | None = None) -> Set[str]:
+    def find_candidates(
+            self, stopwords: List[str] | None = None, max_workers: int | None = None
+    ) -> Set[str]:
         """
         Find all inversion candidates for the initialism by searching txt files in the directory.
 
         Args:
             stopwords: Optional list of stopwords to allow between n-gram terms.
                       If None, uses default English stopwords.
+            max_workers: The maximum number of threads to use for parallel processing.
+                         If None, a default value is chosen by the ThreadPoolExecutor.
 
         Returns:
             A set of candidate expansions found across all txt files
         """
         all_candidates = set()
 
-        # iterate over the generator and accumulate the candidates
-        for file_content in txt_generator(self.directory):
-            candidates = get_initialism_candidates(
-                self.initialism, file_content, stopwords
+        def process_file_content(content: str) -> Set[str]:
+            return get_initialism_candidates(self.initialism, content, stopwords)
+
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            results_iterator = executor.map(
+                process_file_content, txt_generator(self.directory)
             )
-            all_candidates.update(candidates)
+
+            for candidates in results_iterator:
+                all_candidates.update(candidates)
 
         return all_candidates
 
