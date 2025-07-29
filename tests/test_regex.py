@@ -149,7 +149,6 @@ class TestRegexInitialismInverter:
     def temp_dir_with_files(self):
         """Create a temporary directory with test txt files."""
         with tempfile.TemporaryDirectory() as temp_dir:
-            # Create test files with different content
             test_files = {
                 "file1.txt": "Natural Language Processing is a field of AI. Machine Learning and Deep Learning are related.",
                 "file2.txt": "The United States of America is a country. NASA stands for National Aeronautics and Space Administration.",
@@ -199,77 +198,72 @@ class TestRegexInitialismInverter:
     def test_find_candidates_basic(self, temp_dir_with_files):
         """Test basic candidate finding functionality."""
         inverter = RegexInitialismInverter("NLP", temp_dir_with_files)
-        candidates = inverter.find_candidates()
-        assert "Natural Language Processing" in candidates
+        assert inverter.find_candidates() == {"Natural Language Processing"}
 
-    def test_find_candidates_multiple_files(self, temp_dir_with_files):
-        """Test that candidates are found across multiple files."""
+        inverter_api = RegexInitialismInverter("API", temp_dir_with_files)
+        assert inverter_api.find_candidates() == {"Application Programming Interface"}
+
+    def test_find_candidates_multithreaded(self, temp_dir_with_files):
+        """Test that find_candidates works correctly with multithreading."""
+        inverter = RegexInitialismInverter("NLP", temp_dir_with_files)
+        expected_candidates = {"Natural Language Processing"}
+
+        assert inverter.find_candidates() == expected_candidates
+
+        assert inverter.find_candidates(max_workers=2) == expected_candidates
+
+        assert inverter.find_candidates(max_workers=10) == expected_candidates
+
+    def test_find_candidates_with_mocked_executor(self, temp_dir_with_files):
+        """Test that ThreadPoolExecutor is called with the correct max_workers."""
         inverter = RegexInitialismInverter("API", temp_dir_with_files)
-        candidates = inverter.find_candidates()
-        assert "Application Programming Interface" in candidates
 
-    def test_find_candidates_subdirectories(self, temp_dir_with_files):
-        """Test that files in subdirectories are searched."""
-        inverter = RegexInitialismInverter("CPU", temp_dir_with_files)
-        candidates = inverter.find_candidates()
-        assert "Central Processing Unit" in candidates
+        with patch("abbsolve.infer.regex.ThreadPoolExecutor") as mock_executor:
+            inverter.find_candidates(max_workers=4)
+            mock_executor.assert_called_once_with(max_workers=4)
 
-    def test_find_candidates_with_custom_stopwords(self, temp_dir_with_files):
-        """Test candidate finding with custom stopwords."""
-        inverter = RegexInitialismInverter("ML", temp_dir_with_files)
-        candidates = inverter.find_candidates(stopwords=["and"])
-        assert "Machine Learning" in candidates
+        with patch("abbsolve.infer.regex.ThreadPoolExecutor") as mock_executor:
+            inverter.find_candidates(max_workers=None)
+            mock_executor.assert_called_once_with(max_workers=None)
 
     def test_find_candidates_no_matches(self, temp_dir_with_files):
-        """Test when no candidates are found."""
+        """Test that an empty set is returned when no candidates are found."""
         inverter = RegexInitialismInverter("XYZ", temp_dir_with_files)
-        candidates = inverter.find_candidates()
-        assert len(candidates) == 0
+        assert inverter.find_candidates() == set()
 
-    def test_find_candidates_with_sources_basic(self, temp_dir_with_files):
-        """Test finding candidates with source file information."""
-        inverter = RegexInitialismInverter("NLP", temp_dir_with_files)
-        candidates_with_sources = inverter.find_candidates_with_sources()
-
-        assert "Natural Language Processing" in candidates_with_sources
-        source_files = candidates_with_sources["Natural Language Processing"]
-        assert len(source_files) == 1
-        assert source_files[0].endswith("file1.txt")
+    def test_find_candidates_with_sources(self, temp_dir_with_files):
+        """Test finding candidates with their source files."""
+        inverter = RegexInitialismInverter("CPU", temp_dir_with_files)
+        expected = {
+            "Central Processing Unit": [
+                str(Path(temp_dir_with_files) / "subdir/nested/file4.txt")
+            ]
+        }
+        assert inverter.find_candidates_with_sources() == expected
 
     def test_find_candidates_with_sources_multiple_files(self, temp_dir_with_files):
-        """Test that source tracking works across multiple files."""
-        # Add NASA to multiple files to test source tracking
-        nasa_content = "NASA stands for National Aeronautics and Space Administration."
+        """Test finding candidates that appear in multiple source files."""
+        new_file_path = Path(temp_dir_with_files) / "file5.txt"
+        new_file_path.write_text(
+            "Another mention of the Central Processing Unit.", encoding="utf-8"
+        )
 
-        # Write to an additional file
-        additional_file = os.path.join(temp_dir_with_files, "nasa.txt")
-        with open(additional_file, "w", encoding="utf-8") as f:
-            f.write(nasa_content)
-
-        inverter = RegexInitialismInverter("NASA", temp_dir_with_files)
-        candidates_with_sources = inverter.find_candidates_with_sources()
-
-        if "National Aeronautics and Space Administration" in candidates_with_sources:
-            source_files = candidates_with_sources[
-                "National Aeronautics and Space Administration"
+        inverter = RegexInitialismInverter("CPU", temp_dir_with_files)
+        expected = {
+            "Central Processing Unit": [
+                str(Path(temp_dir_with_files) / "subdir/nested/file4.txt"),
+                str(new_file_path),
             ]
-            assert len(source_files) >= 1
-            assert any(
-                f.endswith("file2.txt") or f.endswith("nasa.txt") for f in source_files
-            )
-
-    def test_find_candidates_with_sources_empty_result(self, temp_dir_with_files):
-        """Test source tracking when no candidates are found."""
-        inverter = RegexInitialismInverter("XYZ", temp_dir_with_files)
-        candidates_with_sources = inverter.find_candidates_with_sources()
-        assert len(candidates_with_sources) == 0
+        }
+        expected["Central Processing Unit"].sort()
+        result = inverter.find_candidates_with_sources()
+        result["Central Processing Unit"].sort()
+        assert result == expected
 
     def test_find_candidates_ignores_non_txt_files(self, temp_dir_with_files):
         """Test that non-txt files are ignored."""
-        # The temp directory contains "other.log" which should be ignored
         inverter = RegexInitialismInverter("LOG", temp_dir_with_files)
         candidates = inverter.find_candidates()
-        # Should not find anything since .log files are ignored
         assert len(candidates) == 0
 
     def test_empty_directory(self):
@@ -285,7 +279,6 @@ class TestRegexInitialismInverter:
     def test_directory_with_only_empty_files(self):
         """Test behavior with directory containing only empty txt files."""
         with tempfile.TemporaryDirectory() as temp_dir:
-            # Create empty txt files
             for i in range(3):
                 empty_file = os.path.join(temp_dir, f"empty{i}.txt")
                 with open(empty_file, "w", encoding="utf-8") as f:
@@ -301,7 +294,6 @@ class TestRegexInitialismInverter:
         """Test that file read errors are handled gracefully and logged."""
         inverter = RegexInitialismInverter("NLP", temp_dir_with_files)
 
-        # Mock the open function to raise an exception for one specific file
         original_open = open
 
         def mock_open_func(*args, **kwargs):
@@ -312,7 +304,6 @@ class TestRegexInitialismInverter:
         with patch("builtins.open", side_effect=mock_open_func):
             candidates_with_sources = inverter.find_candidates_with_sources()
 
-        # Check that error was printed
         captured = capsys.readouterr()
         assert "Error reading file" in captured.out
         assert "file1.txt" in captured.out
