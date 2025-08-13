@@ -33,7 +33,7 @@ and makes no use of large language models (LLMs).
 
 ### v0.1.0
 
-- [ ] CLI version for terminal use
+- [X] CLI version for terminal use
 - [ ] ability to search digital-native PDFs
 
 ### v0.2.0
