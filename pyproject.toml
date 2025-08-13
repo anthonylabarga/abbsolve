@@ -3,14 +3,15 @@ name = "abbsolve"
 version = "0.0.1"
 description = "An abbreviation, initialism, and acronym resolver and inverter."
 authors = [
-    {name = "John Anthony Labarga",email = "anthony@anthonylabarga.us"}
+    { name = "John Anthony Labarga", email = "anthony@anthonylabarga.us" }
 ]
-license = {text = "MIT"}
+license = { text = "MIT" }
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "gensim (>=4.3.3,<5.0.0)",
     "pandas (>=2.3.0,<3.0.0)",
+    "typer (>=0.16.0,<0.17.0)",
 ]
 
 [tool.poetry]
@@ -27,3 +28,6 @@ twine = "^6.1.0"
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+abbsolve = "abbsolve.cli.cli:main"
