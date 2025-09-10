@@ -12,6 +12,7 @@ dependencies = [
     "gensim (>=4.3.3,<5.0.0)",
     "pandas (>=2.3.0,<3.0.0)",
     "typer (>=0.16.0,<0.17.0)",
+    "pypdf (>=6.0.0,<7.0.0)",
 ]
 
 [tool.poetry]
